@@ -87,3 +87,15 @@ model RateLimitLog {
 
   @@index([ip, createdAt])
 }
+
+// 公告
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled, createdAt])
+}

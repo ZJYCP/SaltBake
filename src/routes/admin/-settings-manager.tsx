@@ -6,6 +6,7 @@ import { RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { apiGet, apiPost } from "@/lib/client/api-client";
 import type { ConfigItem, CookieStatus } from "@/lib/shared/types";
+import { AnnouncementManager } from "./-announcement-manager";
 
 // 系统设置组件
 export function SettingsManager() {
@@ -84,6 +85,9 @@ export function SettingsManager() {
 
   return (
     <div className="space-y-6">
+      {/* 公告发布 */}
+      <AnnouncementManager />
+
       {/* 运行时配置 */}
       <Card>
         <CardHeader>

@@ -18,6 +18,7 @@ import {
   Clock,
   AlertCircle,
   Download,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/shared/utils";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ import type {
   ArticleListItem as Article,
   ArticlesListResponse as ArticlesResponse,
   Stats,
+  Announcement,
 } from "@/lib/shared/types";
 
 interface Task {
@@ -147,6 +149,8 @@ function HomeContent() {
   const [initialLoading, setInitialLoading] = useState(true);
   // 是否处于爬取模式（不显示搜索提示）
   const [crawlingUrl, setCrawlingUrl] = useState<string | null>(null);
+  // 首页公告
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   const inputType = getInputType(input);
   const hasRunningTask = tasks.some((t) => t.status === "RUNNING");
@@ -192,16 +196,25 @@ function HomeContent() {
     []
   );
 
+  // 获取公告
+  const fetchAnnouncements = useCallback(async () => {
+    const result = await apiGet<Announcement[]>("/api/announcements", false);
+    if (result.success) {
+      setAnnouncements(result.data);
+    }
+  }, []);
+
   // 初始化加载
   useEffect(() => {
     const isUrlSearch = initialSearch.includes("zhihu.com");
     Promise.all([
       fetchArticles(initialPage, initialSearch, isUrlSearch),
-      fetchStats()
+      fetchStats(),
+      fetchAnnouncements(),
     ]).finally(() => {
       setInitialLoading(false);
     });
-  }, [fetchArticles, fetchStats, initialPage, initialSearch]);
+  }, [fetchArticles, fetchStats, fetchAnnouncements, initialPage, initialSearch]);
 
   // 提交搜索
   const handleSubmit = async () => {
@@ -467,6 +480,32 @@ function HomeContent() {
           100% { background-position: -200% 0; }
         }
       `}</style>
+
+      {/* 公告横幅 */}
+      {announcements.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {announcements.map((announcement) => (
+            <div
+              key={announcement.id}
+              className="relative overflow-hidden rounded-lg border border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 p-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 shrink-0 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                  <Megaphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    {announcement.title}
+                  </p>
+                  <p className="text-sm text-blue-700/80 dark:text-blue-300/80 mt-1 leading-relaxed whitespace-pre-wrap break-all">
+                    {announcement.content}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 统计摘要 */}
       {stats && !searchQuery && !crawlingUrl && (

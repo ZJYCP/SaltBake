@@ -10,6 +10,8 @@ function isAdminGuarded(source: string): boolean {
   return ADMIN_GUARDS.some((guard) => source.includes(guard));
 }
 const expectedRoutes = new Map([
+  ["admin/announcements/$id/route.ts", "/api/admin/announcements/$id"],
+  ["admin/announcements/route.ts", "/api/admin/announcements"],
   ["admin/articles/$id/route.ts", "/api/admin/articles/$id"],
   ["admin/articles/route.ts", "/api/admin/articles"],
   ["admin/auth/route.ts", "/api/admin/auth"],
@@ -18,9 +20,10 @@ const expectedRoutes = new Map([
   ["admin/cookie-status/route.ts", "/api/admin/cookie-status"],
   ["admin/feedback/$id/route.ts", "/api/admin/feedback/$id"],
   ["admin/feedback/route.ts", "/api/admin/feedback"],
+  ["announcements/route.ts", "/api/announcements"],
   ["articles/route.ts", "/api/articles"],
   ["crawl/route.ts", "/api/crawl"],
-  ["cron/check-cookie/route.ts", "/api/cron/check-cookie"],
+  ["external/config/route.ts", "/api/external/config"],
   ["tasks/$id/feedback/route.ts", "/api/tasks/$id/feedback"],
   ["stats/route.ts", "/api/stats"],
   ["tasks/$id/route.ts", "/api/tasks/$id"],
@@ -132,6 +135,34 @@ assert.match(
   adminFeedbackDetailSource,
   /PUT:\s*(async|withAdmin)/,
   "/api/admin/feedback/$id must support PUT because the admin API client uses apiPut",
+);
+
+const publicAnnouncementsSource = await readFile(
+  join(apiDir.pathname, "announcements/route.ts"),
+  "utf8"
+);
+assert.equal(
+  isAdminGuarded(publicAnnouncementsSource),
+  false,
+  "/api/announcements must be public for the homepage banner",
+);
+
+const adminAnnouncementsSource = await readFile(
+  join(apiDir.pathname, "admin/announcements/route.ts"),
+  "utf8"
+);
+assert.ok(
+  isAdminGuarded(adminAnnouncementsSource),
+  "/api/admin/announcements must be admin-only because it publishes announcements",
+);
+
+const adminAnnouncementDetailSource = await readFile(
+  join(apiDir.pathname, "admin/announcements/$id/route.ts"),
+  "utf8"
+);
+assert.ok(
+  isAdminGuarded(adminAnnouncementDetailSource),
+  "/api/admin/announcements/$id must be admin-only because it manages announcements",
 );
 
 console.log("api route migration contract ok");

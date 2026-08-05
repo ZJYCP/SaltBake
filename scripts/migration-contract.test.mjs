@@ -133,6 +133,11 @@ assert.match(
   /\/api\/admin\/feedback/,
   "admin panel should read feedback from the protected admin feedback API",
 );
+assert.match(
+  adminPanelSource,
+  /\/api\/admin\/announcements/,
+  "admin panel should manage announcements through the protected admin announcements API",
+);
 
 // @prisma/client 是 CJS，内部用 __dirname 定位 query-engine 二进制。
 // 若被 Nitro 打进 ESM bundle，__dirname 不存在会运行时报错（Docker Node ESM）。
