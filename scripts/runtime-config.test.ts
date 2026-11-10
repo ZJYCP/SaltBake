@@ -10,6 +10,7 @@ import {
 
 assert.deepEqual(RUNTIME_CONFIG_KEYS, [
   "zhihu_cookie",
+  "zhihu_access_token",
   "siliconflow_api_key",
   "crawler_user_agent",
   "request_delay_ms",
@@ -19,6 +20,11 @@ assert.deepEqual(RUNTIME_CONFIG_KEYS, [
 ]);
 
 assert.equal(CONFIG_DEFINITIONS.zhihu_cookie.sensitive, true);
+assert.equal(CONFIG_DEFINITIONS.zhihu_access_token.sensitive, true);
+assert.equal(validateConfigValue("zhihu_access_token", " Bearer example-token "), null);
+assert.equal(validateConfigValue("zhihu_access_token", ""), null);
+assert.ok(validateConfigValue("zhihu_access_token", "bad\r\nInjected: header"));
+assert.equal(serializeConfig("zhihu_access_token", "example-token").value, "");
 assert.equal(CONFIG_DEFINITIONS.request_delay_ms.defaultValue, "3000");
 
 assert.equal(coerceConfigValue("request_delay_ms", "1200"), 1200);

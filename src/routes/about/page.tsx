@@ -68,7 +68,18 @@ function AboutPage() {
                     付费专栏：zhihu.com/market/paid_column/xxx/section/xxx
                   </span>
                 </li>
+                <li className="flex items-center gap-2">
+                  <ChevronRight className="h-3 w-3" />
+                  <span>知乎分享：oia.zhihu.com/km_paid_content/share?…</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <ChevronRight className="h-3 w-3" />
+                  <span>盐言故事分享：soia.zhihu.com/km_paid_content/share?…</span>
+                </li>
               </ul>
+              <p className="mt-3 text-sm text-blue-600 dark:text-blue-400">
+                oia/soia 分享链接需先在管理后台的“系统设置”中保存知乎 access_token，随后在首页直接提交即可自动还原并抓取。文章原文地址保存为还原后的 paid_column 或问答链接。
+              </p>
             </div>
             {/* 手机端 */}
             <div>
@@ -77,8 +88,8 @@ function AboutPage() {
                 手机端（知乎 App）
               </h3>
               <p className="text-sm text-[hsl(var(--muted-foreground))] mb-3">
-                注意：通过知乎 App
-                的分享功能的【复制链接】得到的网址无法提取内容，请使用以下两种方式
+                复制得到 oia/soia 分享链接时，可配置 access_token 后直接提交首页。
+                如需获取普通文章链接，也可以尝试以下两种方式。
               </p>
               <div className="space-y-4 text-sm text-[hsl(var(--muted-foreground))]">
                 {/* 方法一 */}

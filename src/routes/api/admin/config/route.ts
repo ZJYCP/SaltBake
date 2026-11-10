@@ -45,7 +45,7 @@ async function updateAdminConfig(request: Request) {
 
     const { key, value } = body;
 
-    if (!key || value === undefined) {
+    if (typeof key !== "string" || !key || typeof value !== "string") {
       return errorResponse("key 和 value 不能为空", 400);
     }
 
