@@ -2,6 +2,7 @@ import { prisma } from "@/lib/server/prisma";
 
 export const RUNTIME_CONFIG_KEYS = [
   "zhihu_cookie",
+  "zhihu_access_token",
   "siliconflow_api_key",
   "crawler_user_agent",
   "request_delay_ms",
@@ -27,6 +28,13 @@ export const CONFIG_DEFINITIONS: Record<
   zhihu_cookie: {
     label: "知乎 Cookie",
     description: "用于访问知乎内容的登录 Cookie",
+    defaultValue: "",
+    sensitive: true,
+    kind: "secret",
+  },
+  zhihu_access_token: {
+    label: "知乎 access_token",
+    description: "用于还原 oia/soia 分享链接；普通文章链接不需要此项。可填写令牌值或 Bearer 加令牌值，过期后在此更新，保存立即生效。",
     defaultValue: "",
     sensitive: true,
     kind: "secret",
@@ -121,6 +129,13 @@ export function coerceConfigValue(key: RuntimeConfigKey, value: string) {
 
 export function validateConfigValue(key: RuntimeConfigKey, value: string) {
   const definition = CONFIG_DEFINITIONS[key];
+  if (key === "zhihu_access_token") {
+    if (!value.trim()) return null;
+    const token = value.trim().replace(/^Bearer\s+/i, "");
+    return token.length > 0 && token.length <= 4096 && /^[\x21-\x7e]+$/.test(token)
+      ? null
+      : "access_token 格式不正确，请只粘贴令牌值或 Bearer 加令牌值";
+  }
 
   if (definition.kind !== "number") {
     return null;

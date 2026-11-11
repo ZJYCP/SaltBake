@@ -17,6 +17,7 @@
     "test:deploy": "node scripts/deploy-contract.test.mjs",
     "test:migration": "node scripts/migration-contract.test.mjs",
     "test:runtime-config": "tsx scripts/runtime-config.test.ts",
+    "test:share-links": "tsx scripts/share-links.test.ts",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate:dev": "prisma migrate dev",

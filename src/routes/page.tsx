@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/shared/utils";
 import { toast } from "sonner";
 import { apiGet, apiPost, apiDelete } from "@/lib/client/api-client";
+import { isZhihuShareUrl } from "@/lib/shared/zhihu-share-url";
 import type {
   ArticleListItem as Article,
   ArticlesListResponse as ArticlesResponse,
@@ -64,6 +65,7 @@ type InputType = "keyword" | "valid_url" | "invalid_url";
 function getInputType(text: string): InputType {
   const trimmed = text.trim();
   if (!trimmed) return "keyword";
+  if (isZhihuShareUrl(trimmed)) return "valid_url";
 
   // 检查是否像 URL
   if (trimmed.includes("zhihu.com") || trimmed.startsWith("http")) {
@@ -218,6 +220,7 @@ function HomeContent() {
 
   // 提交搜索
   const handleSubmit = async () => {
+    if (loading || crawlingUrl || hasRunningTask) return;
     const trimmedInput = input.trim();
     if (!trimmedInput) return;
 
@@ -226,14 +229,17 @@ function HomeContent() {
 
     if (inputType === "valid_url") {
       // URL 搜索路径
-      const cleanUrl = cleanZhihuUrl(trimmedInput);
+      let cleanUrl = isZhihuShareUrl(trimmedInput) ? trimmedInput : cleanZhihuUrl(trimmedInput);
 
       setLoading(true);
       // 搜索是否已存在
-      const data = await fetchArticles(1, cleanUrl, true);
+      // 分享参数不能直接用于文章搜索；由服务端先还原并按真实地址去重。
+      const data = isZhihuShareUrl(trimmedInput)
+        ? null
+        : await fetchArticles(1, cleanUrl, true);
       setLoading(false);
 
-      if (data.total > 0) {
+      if (data && data.total > 0) {
         // 已存在，展示搜索结果
         setSearchQuery(cleanUrl);
         setInput("");
@@ -252,6 +258,7 @@ function HomeContent() {
       }
 
       const task = taskResult.data;
+      cleanUrl = task.existing && task.article ? task.article.url : task.url;
 
       // 如果返回了已存在的文章（后端二次检查）
       if (task.existing && task.article) {
@@ -261,6 +268,7 @@ function HomeContent() {
         setSearchQuery(cleanUrl);
         setInput("");
         setCrawlingUrl(null);
+        updateUrl(1, cleanUrl);
         return;
       }
 
@@ -360,7 +368,7 @@ function HomeContent() {
         <p className="text-xs text-amber-600 mt-2 flex gap-1 break-all">
           <AlertCircle className="h-3 w-3 shrink-0 mt-0.5" />
           <span>
-            暂不支持此 URL 格式，支持付费专栏和问答链接。
+            暂不支持此 URL 格式，支持付费专栏、问答及 oia/soia 分享链接。
             <Link to="/about" className="text-blue-500 hover:underline ml-1">
               如何获取链接？
             </Link>
@@ -370,6 +378,13 @@ function HomeContent() {
     }
 
     if (inputType === "valid_url") {
+      if (isZhihuShareUrl(input)) {
+        return (
+          <p className="mt-2 text-sm text-blue-500">
+            检测到分享链接，点击搜索自动还原并抓取；需先在管理后台配置 access_token
+          </p>
+        );
+      }
       return (
         <p className="text-xs text-blue-600 mt-2">
           检测到知乎 URL，点击搜索查找或爬取
@@ -555,13 +570,13 @@ function HomeContent() {
             </div>
             <Button
               onClick={handleSubmit}
-              disabled={loading || hasRunningTask || !input.trim() || inputType === "invalid_url"}
+              disabled={loading || !!crawlingUrl || hasRunningTask || !input.trim() || inputType === "invalid_url"}
               className={cn(
                 "h-11 px-6",
                 inputType === "valid_url" && "bg-blue-600 hover:bg-blue-700"
               )}
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "搜索"}
+              {loading || crawlingUrl ? <Loader2 aria-label="处理中" className="h-4 w-4 animate-spin" /> : "搜索"}
             </Button>
           </div>
           {renderInputHint()}

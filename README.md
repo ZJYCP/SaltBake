@@ -15,12 +15,12 @@
 
 ## 功能特性
 
-- 支持知乎**付费专栏**和**问答**链接的内容采集
+- 支持知乎**付费专栏**、**问答**、**oia 分享链接**和**soia 盐言故事分享链接**的内容采集
 - 自动处理知乎字体反爬（解析 WOFF2 字体 → 渲染字形 → OCR 识别真实字符）
 - 内容本地化存储，支持按关键词或 URL 精确搜索
 - 响应式 Web 界面，支持深色模式
 - 文章批量导出为 Markdown
-- 管理后台：文章管理、用户反馈、运行时配置（Cookie / API Key 等在线修改，免重启）
+- 管理后台：文章管理、用户反馈、运行时配置（Cookie / access_token / API Key 等在线修改，免重启）
 - 知乎 Cookie 可用性定时检查与 24h 状态时间线
 
 ## 技术栈
@@ -104,6 +104,24 @@ docker compose up -d
 
 - **问答链接**: `https://www.zhihu.com/question/xxx/answer/xxx`
 - **付费专栏**: `https://www.zhihu.com/market/paid_column/xxx/section/xxx`
+- **知乎分享**: `https://oia.zhihu.com/km_paid_content/share?km_pst=...&share_code=...`
+- **盐言故事分享**: `https://soia.zhihu.com/km_paid_content/share?...&mst=...`
+
+**注意：** `oia`是普通回答等通过知乎“复制链接”按钮复制的URL，`soia`是盐言故事/小说等通过知乎“复制链接”按钮复制的URL。这两种链接形式需要配置知乎`access_token`才能正常抓取，具体参见下面说明。
+
+**本人亲测大量盐言故事的小说内容无法轻易获取到`paid_column`链接，因此我觉得提供`oia`和`soia`的支持是很有必要的。**
+
+### oia / soia 分享链接必读
+
+1. 在 `/admin` →「系统设置」中填写并保存「知乎 access_token」。此项和 Cookie 一样保存在 PostgreSQL 的 `SystemConfig` 表中，作为敏感配置处理；过期后在同一位置更新即可，无需重启服务。
+2. 在首页现有的链接输入框粘贴完整分享链接，点击「搜索」。服务端先还原为普通文章地址，再查重或创建抓取任务。
+3. 保存的任务地址、文章原文链接和后续搜索均使用还原后的地址。不同分享链接指向同一篇已完成文章时，会返回已有文章。
+
+`access_token` 可从自己账号的知乎网页登录响应中获取：新开一个无痕浏览器，打开知乎官网，登录前打开浏览器开发者工具的「网络」面板、勾选「保留日志」，完成登录后检查 `scan_info` 或 `sign_in` 等实际登录请求的 JSON 响应，复制 `access_token` 的值（不是 Cookie 或 `refresh_token`）。也支持带 `Bearer ` 前缀的值。
+
+普通问答和付费专栏链接不要求配置 `access_token`。该令牌仅用于分享链接还原，不替代正文抓取所需的有效 Cookie 和内容访问权限。分享链接失效时，请在 App 中重新分享并复制完整参数。
+
+> **原理：** 还原协议参考 [zhihu_tools issue #16](https://github.com/onewhitethreee/zhihu_tools/issues/16)；签名逻辑实现改编自 [zhihulite/zhihu_zse96](https://github.com/zhihulite/zhihu_zse96)，相关源码及 MIT 许可证位于 `src/lib/server/zhihu-share/`。接口和登录机制可能随知乎更新而变化。
 
 ## 如何获取链接
 
@@ -120,7 +138,7 @@ docker compose up -d
 3. 在微信中打开分享的链接
 4. 点击微信浏览器右上角「...」，选择「复制链接」
 
-> 注意：知乎 App 分享功能中的「复制链接」得到的网址无法提取内容，请用上述方法获取完整链接。
+> 如果用知乎APP「复制链接」得到 oia/soia 地址，也可按上面的步骤配置`access_token`后直接提交。
 
 ### 电脑端
 

@@ -98,7 +98,7 @@ export function SettingsManager() {
             <div key={config.key} className="border-b pb-5 last:border-b-0 last:pb-0">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div>
-                  <label className="text-sm font-medium">{config.label}</label>
+                  <label htmlFor={`config-${config.key}`} className="text-sm font-medium">{config.label}</label>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
                     {config.description}
                   </p>
@@ -111,6 +111,9 @@ export function SettingsManager() {
               </div>
               {config.sensitive || config.key === "crawler_user_agent" ? (
                 <textarea
+                  id={`config-${config.key}`}
+                  autoComplete="off"
+                  spellCheck={false}
                   value={values[config.key] ?? ""}
                   onChange={(e) =>
                     setValues((current) => ({
@@ -123,6 +126,7 @@ export function SettingsManager() {
                 />
               ) : (
                 <Input
+                  id={`config-${config.key}`}
                   type={config.kind === "number" ? "number" : "text"}
                   value={values[config.key] ?? ""}
                   onChange={(e) =>

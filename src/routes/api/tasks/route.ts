@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { prisma } from "@/lib/server/prisma";
-import { cleanZhihuUrl } from "@/lib/crawler";
+import { resolveCrawlUrl } from "@/lib/server/zhihu-share/resolve";
+import { ShareRestoreError } from "@/lib/server/zhihu-share/restore";
 import { errorResponse, handleApiError, jsonResponse, safeParseJson } from "@/lib/server/api-response";
 import { checkRateLimit } from "@/lib/server/rate-limiter";
 
@@ -48,7 +49,7 @@ async function getTasks(request: Request) {
 }
 
 // POST /api/tasks - 创建任务
-async function createTask(request: Request) {
+export async function createTask(request: Request) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ||
                request.headers.get("x-real-ip") ||
@@ -66,12 +67,12 @@ async function createTask(request: Request) {
 
     const { url } = body;
 
-    if (!url) {
+    if (typeof url !== "string" || !url.trim()) {
       return errorResponse("URL 不能为空", 400);
     }
 
-    // 清理 URL，去除查询参数
-    const cleanUrl = cleanZhihuUrl(url);
+    // 分享链接必须先还原，再按普通文章地址去重和保存。
+    const cleanUrl = await resolveCrawlUrl(url);
     if (!cleanUrl) {
       return errorResponse("无效的知乎 URL 格式", 400);
     }
@@ -103,6 +104,9 @@ async function createTask(request: Request) {
 
     return jsonResponse(task);
   } catch (error) {
+    if (error instanceof ShareRestoreError) {
+      return errorResponse(error.message, error.status, "SHARE_RESTORE_ERROR");
+    }
     return handleApiError(error, "创建任务失败");
   }
 }
